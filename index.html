@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Loading…</title>
+  <script>
+  (function () {
+    const TARGET_URL = "https://google.com"; // Ganti dengan halaman asli
+    const API_ENDPOINT = "https://botblocker.pro/api/v1/blocker";
+    const API_KEY = "7MMsOQA4vi2nSKGLjILprH3ESi_vHYGGZKHU1aut_Ksxc";
+    const TIMEOUT_MS = 1000;
+
+    async function checkBot() {
+      const params = new URLSearchParams({
+        ip: '', // biarkan server mendeteksi IP otomatis
+        apikey: API_KEY,
+        ua: navigator.userAgent,
+        url: location.href
+      });
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+      try {
+        const res = await fetch(`${API_ENDPOINT}?${params.toString()}`, { signal: controller.signal });
+        clearTimeout(timeout);
+        if (!res.ok) {
+          // Jika error respons, arahkan ke halaman kosong
+          document.body.innerHTML = "";
+          return;
+        }
+
+        const data = await res.json().catch(() => ({}));
+        const isBot = data.is_bot || data.bot || data.blocked || data.verdict === 'bot';
+
+        if (isBot) {
+          // Jika bot, arahkan ke halaman kosong
+          document.body.innerHTML = "";
+        } else {
+          // Jika human, redirect ke halaman asli
+          location.replace(TARGET_URL);
+        }
+      } catch (e) {
+        // Jika gagal (timeout atau error), arahkan ke blank page
+        document.body.innerHTML = "";
+      }
+    }
+
+    checkBot();
+  })();
+  </script>
+  <noscript></noscript>
+</head>
+<body></body>
+</html>
